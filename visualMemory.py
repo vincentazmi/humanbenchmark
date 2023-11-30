@@ -1,12 +1,12 @@
 from PIL import Image
-import pyautogui
+import pyautogui, time
 
 class MemoryBot():
     
 
     def __init__(self,
                  bgColour=None, boxColour=None,
-                 topLeft=None,bottomRight=None):
+                 topLeft=None,bottomRight=None,DEBUG=False):
         # Preset Colours
         if bgColour != None and boxColour != None:
             self.bgColour = bgColour
@@ -30,7 +30,7 @@ class MemoryBot():
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
-        self.getBoxValues()
+        self.getBoxValues(DEBUG)
 
     
 
@@ -87,6 +87,7 @@ Then press enter in this window.
 
     # Get the number of boxes
     def getBoxValues(self, DEBUG=False):
+        if DEBUG: print("BOX VALUES NOW************************************************************")
         ss = pyautogui.screenshot(region=(self.left,self.top,
                                           self.width, self.height))
 
@@ -101,7 +102,7 @@ Then press enter in this window.
         boxCount = 0
         # inBox is used to count the boxes
         inBox = False
-
+        
         # For loop goes from left to right, top to bottom
         for x in range(self.width):
             for y in range(self.height):
@@ -117,6 +118,7 @@ Then press enter in this window.
 
                     # Only run the first time
                     if boxHeight[0] == 0:
+                        print("change box height",x,y)
                         topLeftCorner = (x,y)
                         boxHeight[0] = y
 
@@ -132,7 +134,9 @@ Then press enter in this window.
                     if DEBUG: ss.putpixel((x, y), (255, 0, 0))
 
                     # Only run the first time
-                    if boxHeight[1] == 0: boxHeight[1] = y
+                    if boxHeight[1] == 0:
+                        print("change box 2height",x,y)
+                        boxHeight[1] = y
 
                     # Will remember the last box's bottom y coordinate
                     bottomY = y
@@ -152,9 +156,9 @@ Then press enter in this window.
         
         self.top += topLeftCorner[1]
         self.left += topLeftCorner[0]
-        self.right = int(self.left + self.boxSize*self.boxCount + self.gapSize*(self.boxCount-1))
-        self.bottom = int(self.top + self.boxSize*self.boxCount + self.gapSize*(self.boxCount-1))
-        
+        self.right = int(self.left + self.boxSize*self.boxCount + self.gapSize*(self.boxCount))
+        self.bottom = int(self.top + self.boxSize*self.boxCount + self.gapSize*(self.boxCount))
+
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
@@ -167,32 +171,82 @@ Then press enter in this window.
             ss = pyautogui.screenshot(region=(self.left,self.top,
                                               self.width, self.height))
             ss.save("perfect_screenshot_region.png")
+
+    def updateBoxCount(self,ss,DEBUG=False):
+        ss = pyautogui.screenshot(region=(self.left,self.top,
+                                          self.width, self.height))
+        
+        boxCount = 0
+        # inBox is used to count the boxes
+        inBox = False
+        
+        # For loop goes from left to right, top to bottom
+        for x in range(self.width):
+            for y in range(self.height):
+                px = ss.getpixel((x,y))
+
+                if not inBox and px != self.bgColour:
+                    # Box found
+                    inBox = True
+                    boxCount += 1
+
+                    # DEBUG highlight
+                    if DEBUG: ss.putpixel((x, y), (0, 255, 0))
+                    
+
+                elif inBox and px == self.bgColour:
+                    # Box ended
+                    inBox = False
+
+                    # DEBUG highlight
+                    if DEBUG: ss.putpixel((x, y), (255, 0, 0))
+                    
+                    
+                    
+            
+            if boxCount > 0: break
+        if boxCount > 0:
+            return boxCount
+        else:
+            return None
             
 
-    def waitForFlash(self):
+    def waitForFlash(self, DEBUG=False):
         # After start is clicked this method will wait for the level start 'flash'
 
         white = False
-        # gapColour gets the pixel colour halfway between the top left two boxes
+        # gapColour gets the pixel above the top left box
         for i in range(1000):
-            gapColour = pyautogui.pixel(self.left+(self.boxSize+int(self.gapSize/2)),self.top)
+            gapColour = pyautogui.pixel(self.left,self.top-5)
 
 ##            print(gapColour)
             
             if gapColour == (62, 184, 255):
-                print("WHITE")
+                if DEBUG: print("WHITE")
                 white = True
                 
             if white: break
+        if white:
+            time.sleep(1.4)
+            if DEBUG: print("WAIT FOR FLASH NOW************************************************************")
+            ss = pyautogui.screenshot(region=(self.left,self.top,
+                                              self.width, self.height))
+
+            if DEBUG: ss.save("white_screenshot.png")
+            
+            return ss
+        else: return None
+        
         
 
+    def getWhiteBoxes(self,DEBUG=False):
+        ss = self.waitForFlash(DEBUG)
+        if ss == None:
+            print("ss is none")
+            raise
+        time.sleep(2)
+        self.boxCount = self.updateBoxCount(ss,DEBUG)
         
-        
-
-    def getWhiteBoxes(self):
-        ss = pyautogui.screenshot(region=(self.left,self.top,
-                                          self.width, self.height))
-
         # Start and step values to get x,y coords of the center of the boxes
         start = int(self.boxSize/2)
         step = int(self.boxSize+(self.gapSize/2))
@@ -202,12 +256,25 @@ Then press enter in this window.
         for x in range(start,self.width,step):
             for y in range(start,self.height,step):
                 px = ss.getpixel((x,y))
+                if DEBUG: print("hi",px)
                 if px == (255,255,255):
-                    whiteList.append(px)
+                    whiteList.append((x,y))
 
-        print("whiteList=",whiteList)
+        if DEBUG: print("whiteList=",whiteList)
+
+        if len(whiteList) > 30:
+            print("uhoh 30+ clicks")
+            return
+    
+        time.sleep(2)
+        for pos in whiteList:
+            
+            x = self.left + pos[0]
+            y = self.top + pos[1]
+            if DEBUG: print("click",x,y)
+            pyautogui.click(x,y)
         
-                
+        return self.getWhiteBoxes(DEBUG)
                 
                 
 
@@ -222,14 +289,14 @@ bottomRight = (1468, 660)
 if __name__ == "__main__":
     bgColour=(43, 135, 209)
     boxColour=(37, 115, 193)
-    topLeft = (1072, 262)
-    bottomRight = (1468, 660)
+    topLeft = (1072, 252)
+    bottomRight = (1468, 670)
     bot = MemoryBot(bgColour, boxColour,
-                      topLeft, bottomRight)
+                      topLeft, bottomRight,DEBUG=True)
 
 ##    bot.getBoxValues(DEBUG=True)
     input("ready")
-    bot.waitForFlash()
+    bot.getWhiteBoxes(True)
                            
     
 
