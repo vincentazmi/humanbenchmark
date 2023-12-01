@@ -25,6 +25,11 @@ class MemoryBot():
 
             self.width = self.right - self.left
             self.height = self.bottom - self.top
+            if DEBUG: print('''
+__init__()
+width = {}
+height = {}
+'''.format(self.width,self.height))
         # Not preset area
         else: self.getBoxArea(DEBUG)
 
@@ -37,15 +42,15 @@ class MemoryBot():
         input("ready")
         
         if self.waitForFlash(DEBUG):
-            self.getWhiteBoxes(DEBUG)
-            self.clickWhiteBoxes(DEBUG)
+            if self.getWhiteBoxes(DEBUG):
+                self.clickWhiteBoxes(DEBUG)
         else: return
 
         while self.waitForFlash(DEBUG):
             self.getBoxCount(DEBUG)
             self.getBoxGapSize(DEBUG)
-            self.getWhiteBoxes(DEBUG)
-            self.clickWhiteBoxes(DEBUG)
+            if self.getWhiteBoxes(DEBUG):
+                self.clickWhiteBoxes(DEBUG)
             
 
         
@@ -245,12 +250,12 @@ gapSize = {}
                         break
                 except IndexError:
                     print('''
+IndexError at
 x = {}
 y = {}
 '''.format(x,y))
             if newX != 0: break
-
-        if DEBUG: print("getPerfectScreenshotRegion()")
+            
         
         for y in range(self.height):
             for x in range(self.width):
@@ -284,6 +289,11 @@ x = {}
         self.width = self.right - self.left
         self.height = self.bottom - self.top
 
+        if DEBUG: print('''
+width = {}
+height = {}
+'''.format(self.width,self.height))
+
         self.takeScreenshot()
         self.ss.save("perfect_screenshot_region.png")
                 
@@ -294,22 +304,38 @@ x = {}
     def waitForFlash(self, DEBUG=False):
         # After start is clicked this method will wait for the level start 'flash'
 
-        if DEBUG: pyautogui.moveTo(self.left,self.top-5)
+##        if DEBUG: pyautogui.moveTo(self.left,self.top-5)
+
+        if DEBUG: print("waitForFlash()")
+
+        rgbPercent = 0 # 765 = 255,255,255 (100%)
         
-        white = False
+        flash = False
         # gapColour gets the pixel above the top left box
         for i in range(1000):
             gapColour = pyautogui.pixel(self.left,self.top-5)
-            
 
-##            print(gapColour)
-            
-            if gapColour == (62, 184, 255):
-                if DEBUG: print("WHITE")
-                white = True
+            currentPercent = sum(gapColour)
+            if currentPercent == rgbPercent:
+                # do nothing
+                pass
+            elif currentPercent > rgbPercent:
+                # going up
+                rgbPercent = currentPercent
+##                if DEBUG: print("rgbPercent =",rgbPercent)
                 
-            if white: break
-        if white:
+            elif currentPercent < rgbPercent:
+                # going down
+                flash = True
+                rgbPercent = currentPercent
+##                if DEBUG: print("rgbPercent =",rgbPercent)
+
+            if flash and currentPercent == rgbPercent:
+                # finished flash
+                break
+            time.sleep(0.05)
+            
+        if flash:
             time.sleep(1.4)
             if DEBUG: print("WAIT FOR FLASH NOW**************************************")
             self.takeScreenshot()
@@ -328,14 +354,14 @@ x = {}
         
     def getBoxGridStartStep(self,DEBUG):
 
-        self.gridStart = int(self.left + (self.boxSize/2))
+        self.gridStart = int(self.boxSize/2)
 
         self.gridStep = int(self.boxSize + self.gapSize)
 
         
 
         if DEBUG: print('''
-getWhiteBoxes()
+getBoxGridStartStep()
 gridStart = {}
 gridStep = {}
 '''.format(self.gridStart,self.gridStep))
@@ -350,42 +376,52 @@ gridStep = {}
         # Start and step values to get x,y coords of the center of the boxes
         self.getBoxGridStartStep(DEBUG)
 
+        if DEBUG: print("getBoxGridStartStep()")
+
         whiteList = []
         for x in range(self.gridStart,self.width,self.gridStep):
             for y in range(self.gridStart,self.height,self.gridStep):
                 px = self.ss.getpixel((x,y))
 
-                gridX = int((x-start)/step)
-                gridY = int((y-start)/step)
+                gridX = int((x-self.gridStart)/self.gridStep)
+                gridY = int((y-self.gridStart)/self.gridStep)
                 
-                if DEBUG: print('''
-x = {}
-y = {}
-RGB = {} {}
-'''.format(gridX,
-           gridY,
-           px,"WHITE" if px == (255,255,255) else ""))
+##                if DEBUG: print('''
+##x = {}
+##y = {}
+##RGB = {} {}
+##'''.format(gridX,
+##           gridY,
+##           px,"WHITE" if px == (255,255,255) else ""))
                 
                 if px == (255,255,255):
                     whiteList.append((gridX,gridY))
                 
 
-        if DEBUG: print("whiteList=",whiteList)
-
+        if DEBUG: print('''
+whiteList= {}
+{} Boxes found
+'''.format(whiteList,len(whiteList)))
+        if len(whiteList) < 1:
+            return False
+        
         self.whiteList = whiteList
+        return True
 
 
 
     
         
     def clickWhiteBoxes(self,DEBUG=False):
-        time.sleep(2)
+##        time.sleep(2)
         self.getBoxGridStartStep(DEBUG)
         
-        for (x,y) in self.whiteList:
+        for (gridX,gridY) in self.whiteList:
+            x = int(self.left + (gridX * self.gridStep) + (self.boxSize/2))
+            y = int(self.top + (gridY * self.gridStep) + (self.boxSize/2))
             
-            if DEBUG: print("click",x*self.gridStep,y*self.gridStep)
-            pyautogui.click(x*self.gridStep,y*self.gridStep)
+##            if DEBUG: print("click",x,y)
+            pyautogui.click(x,y)
 
         
 
