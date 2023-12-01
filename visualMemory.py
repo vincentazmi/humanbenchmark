@@ -27,15 +27,32 @@ class MemoryBot():
             self.height = self.bottom - self.top
             if DEBUG: print('''
 __init__()
+self.top = {}
+self.left = {}
+self.bottom = {}
+self.right = {}
 width = {}
 height = {}
-'''.format(self.width,self.height))
+'''.format(self.top,
+           self.left,
+           self.bottom,
+           self.right,
+           self.width,
+           self.height))
         # Not preset area
         else: self.getBoxArea(DEBUG)
 
+        self.boxCount = 99999999999
+        self.takeScreenshot(DEBUG)
+        
         self.getBoxCount(DEBUG,saveImage=True)
 
         self.getBoxGapSize(DEBUG)
+
+        self.originalRegion = [self.top,
+                               self.left,
+                               self.right-self.left,
+                               self.bottom-self.top]
 
         self.getPerfectScreenshotRegion(DEBUG)
 
@@ -47,7 +64,7 @@ height = {}
         else: return
 
         while self.waitForFlash(DEBUG):
-            self.getBoxCount(DEBUG)
+            self.getBoxCount(DEBUG,saveImage=True)
             self.getBoxGapSize(DEBUG)
             if self.getWhiteBoxes(DEBUG):
                 self.clickWhiteBoxes(DEBUG)
@@ -127,10 +144,35 @@ bottomRight = {}
 
 
 
+    def resetScreenshotRegion(self,DEBUG=False):
+        self.top = self.originalRegion[0]
+        self.left = self.originalRegion[1]
+        
+        
+        self.width = self.originalRegion[2]
+        self.height = self.originalRegion[3]
+
+        self.right = self.left + self.height
+        self.bottom = self.top + self.width
+
+        if DEBUG: print('''
+resetScreenshotRegion()
+self.top = {}
+self.left = {}
+self.bottom = {}
+self.right = {}
+width = {}
+height = {}
+'''.format(self.top,
+           self.left,
+           self.bottom,
+           self.right,
+           self.width,
+           self.height))
 
 
-
-    def takeScreenshot(self):
+    def takeScreenshot(self, DEBUG=False):
+        if DEBUG: print("takeScreenshot()")
         self.ss = pyautogui.screenshot(region=(self.left,self.top,
                                           self.width, self.height))
 
@@ -139,7 +181,6 @@ bottomRight = {}
 
 
     def getBoxCount(self,DEBUG=False,saveImage=False):
-        self.takeScreenshot()
         
         boxCount = 0
         # inBox is used to count the boxes
@@ -176,8 +217,14 @@ boxCount = {}
 '''.format(boxCount))
         if saveImage: self.ss.save("boxCount_screenshot.png")
 
-        
+
         if boxCount > 8:
+            if self.boxCount < boxCount:
+                # bigger area - need to recalculate perfect screenshot region
+                if DEBUG: print("Increased size {} -> {}".format(self.boxCount,
+                                                                 boxCount))
+                self.resetScreenshotRegion(DEBUG)
+                self.getPerfectScreenshotRegion(DEBUG)
             self.boxCount = boxCount
 
 
@@ -185,7 +232,6 @@ boxCount = {}
 
 
     def getBoxGapSize(self,DEBUG=False):
-        self.takeScreenshot()
 
         lockY,startX,endX = 0,0,0
         boxSize,gapSize = 0,0
@@ -234,8 +280,8 @@ gapSize = {}
 
 
     def getPerfectScreenshotRegion(self,DEBUG=False):
-        self.takeScreenshot()
-
+        self.takeScreenshot(DEBUG)
+        
         if DEBUG: print("getPerfectScreenshotRegion()")
 
         newX,newY = 0,0
@@ -294,7 +340,7 @@ width = {}
 height = {}
 '''.format(self.width,self.height))
 
-        self.takeScreenshot()
+        self.takeScreenshot(DEBUG)
         self.ss.save("perfect_screenshot_region.png")
                 
         
@@ -327,6 +373,7 @@ height = {}
             elif currentPercent < rgbPercent:
                 # going down
                 flash = True
+                if DEBUG: print("FLASH")
                 rgbPercent = currentPercent
 ##                if DEBUG: print("rgbPercent =",rgbPercent)
 
@@ -336,9 +383,9 @@ height = {}
             time.sleep(0.05)
             
         if flash:
-            time.sleep(1.4)
+            time.sleep(1.5)
             if DEBUG: print("WAIT FOR FLASH NOW**************************************")
-            self.takeScreenshot()
+            self.takeScreenshot(DEBUG)
 
             if DEBUG: self.ss.save("white_screenshot.png")
             
@@ -429,18 +476,22 @@ whiteList= {}
 Presets
 bgColour = (43, 135, 209)
 boxColour = (37, 115, 193)
-topLeft = (1076, 263)
-bottomRight = (1466, 658)
+topLeft = (1060, 260)
+bottomRight = (1480, 680)
 '''
 
 if __name__ == "__main__":
-    bgColour = (43, 135, 209)
-    boxColour = (37, 115, 193)
-    topLeft = (1076, 263)
-    bottomRight = (1466, 658)
-    bot = MemoryBot(bgColour,boxColour,
-                    topLeft,bottomRight,
-                    DEBUG=True)
+    if False:
+        bgColour = (43, 135, 209)
+        boxColour = (37, 115, 193)
+        topLeft = (1060, 260)
+        bottomRight = (1480, 680)
+        bot = MemoryBot(bgColour,boxColour,
+                        topLeft,bottomRight,
+                        DEBUG=True)
+
+    if True:
+        bot = MemoryBot(DEBUG=True)
     
                            
     
