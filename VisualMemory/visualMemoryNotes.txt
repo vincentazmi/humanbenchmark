@@ -1,0 +1,18 @@
+1. Get RGB values of background and box colour = getColours()
+2. Get rough location of tiles = getBoxArea()
+3. Get number of boxes = getBoxCount()
+4. Get box and gap size = getBoxGapSize()
+5. Get perfect screenshot region using box size, number of boxes and gap size getPerfectScreenshotRegion()
+6. Input level 1 (for now) and wait for flash
+7. Time the white box screenshot perfectly (for now) = waitForFlash()
+8. Get white box locations = getWhiteBoxes()
+9. Click white boxes = clickWhiteBoxes()
+
+To repeat each level after that:
+1. Wait for flash and get white box screenshot = waitForFlash()
+2. Recalculate number of boxes = getBoxCount()
+3. Recalculate box and gap sizes = getBoxGapSize()
+4. Analyse white box screenshot with box count = getWhiteBoxes()
+5. Auto click correct boxes = clickWhiteBoxes()
+6. Repeat from 1
+
