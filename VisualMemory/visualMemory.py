@@ -567,7 +567,7 @@ bottomRight = (1814, 706)
 '''
 
 if __name__ == "__main__":
-    if True:
+    if False:
         bgColour = (43, 135, 209)
         boxColour = (37, 115, 193)
         topLeft = (1050, 254)
@@ -580,108 +580,3 @@ if __name__ == "__main__":
         bot = MemoryBot(DEBUG=True)
     
                            
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-# Get the number of boxes
-    def getBoxValues(self, DEBUG=False):
-        if DEBUG: print("BOX VALUES NOW*****************************************")
-        ss = pyautogui.screenshot(region=(self.left,self.top,
-                                          self.width, self.height))
-
-        # topLeftCorner will be used to create the perfect screenshot region
-        topLeftCorner = (0,0)
-        # topY will keep y value of the start of the top box
-        # bottomy will keep y value of the end of the bottom box
-        topY,bottomY = 0,0
-        # boxHeight will hold the start and end y coordinate of the first box
-        boxHeight = [0,0]
-        
-        boxCount = 0
-        # inBox is used to count the boxes
-        inBox = False
-        
-        # For loop goes from left to right, top to bottom
-        for x in range(self.width):
-            for y in range(self.height):
-                px = ss.getpixel((x,y))
-
-                if not inBox and px != self.bgColour:
-                    # Box found
-                    inBox = True
-                    boxCount += 1
-
-                    # DEBUG highlight
-                    if DEBUG: ss.putpixel((x, y), (0, 255, 0))
-
-                    # Only run the first time
-                    if boxHeight[0] == 0:
-                        print("change box height",x,y)
-                        topLeftCorner = (x,y)
-                        boxHeight[0] = y
-
-                    # Only run the first time
-                    if topY == 0: topY = y
-                    
-
-                elif inBox and px == self.bgColour:
-                    # Box ended
-                    inBox = False
-
-                    # DEBUG highlight
-                    if DEBUG: ss.putpixel((x, y), (255, 0, 0))
-
-                    # Only run the first time
-                    if boxHeight[1] == 0:
-                        print("change box 2height",x,y)
-                        boxHeight[1] = y
-
-                    # Will remember the last box's bottom y coordinate
-                    bottomY = y
-                    
-                    
-                    
-            
-            if boxCount > 0: break
-            
-        # DEBUG image
-        if DEBUG: ss.save("modified_screenshot.png")
-        
-        self.boxCount = boxCount
-        self.boxSize = int(boxHeight[1] - boxHeight[0])
-        
-        self.gapSize = ((bottomY-topY)-self.boxSize*self.boxCount)/self.boxCount
-        
-        self.top += topLeftCorner[1]
-        self.left += topLeftCorner[0]
-        self.right = int(self.left + self.boxSize*self.boxCount + self.gapSize*(self.boxCount))
-        self.bottom = int(self.top + self.boxSize*self.boxCount + self.gapSize*(self.boxCount))
-
-        self.width = self.right - self.left
-        self.height = self.bottom - self.top
-
-        
-        self.boxCount **= 2
-        # DEBUG output 9 [12, 120] 108 16.0 12 10 366.0 368.0 356.0 356.0
-        if DEBUG:
-            print(self.boxCount,boxHeight,self.boxSize,self.gapSize,
-                        self.top,self.left,self.right,self.bottom,self.width,self.height)
-            ss = pyautogui.screenshot(region=(self.left,self.top,
-                                              self.width, self.height))
-            ss.save("perfect_screenshot_region.png")
-'''
-
