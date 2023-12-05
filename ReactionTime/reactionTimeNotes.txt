@@ -1,2 +1,3 @@
-
-
+Needed for fastest test:
+x,y of where to click/look
+colour of red
