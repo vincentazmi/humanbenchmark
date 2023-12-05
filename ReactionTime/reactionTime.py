@@ -6,6 +6,7 @@ class MemoryBot():
     def __init__(self,
                  bgColour=None, boxColour=None,
                  topLeft=None,bottomRight=None,DEBUG=False):
+        if DEBUG: print("__init__()")
         # Preset Colours
         if bgColour != None and boxColour != None:
             self.bgColour = bgColour
@@ -18,23 +19,26 @@ class MemoryBot():
             self.topLeft = topLeft
             self.bottomRight = bottomRight
             
-            self.top = topLeft[1]
             self.left = topLeft[0]
+            self.top = topLeft[1]
             self.bottom = bottomRight[1]
             self.right = bottomRight[0]
 
             self.width = self.right - self.left
             self.height = self.bottom - self.top
             if DEBUG: print('''
-__init__()
-self.top = {}
-self.left = {}
-self.bottom = {}
-self.right = {}
+bgColour = {}
+boxColour = {}
+left = {}
+top = {}
+bottom = {}
+right = {}
 width = {}
 height = {}
-'''.format(self.top,
+'''.format(self.bgColour,
+           self.boxColour,
            self.left,
+           self.top,
            self.bottom,
            self.right,
            self.width,
@@ -42,38 +46,46 @@ height = {}
         # Not preset area
         else: self.getBoxArea(DEBUG)
 
+        self.originalRegion = [self.left,
+                               self.top,
+                               self.right-self.left,
+                               self.bottom-self.top]
+
         self.boxCount = 99999999999
-        self.takeScreenshot(DEBUG)
+        self.takeScreenshot(DEBUG,original=True)
         
         self.getBoxCount(DEBUG,saveImage=True)
 
         self.getBoxGapSize(DEBUG)
 
-        self.originalRegion = [self.top,
-                               self.left,
-                               self.right-self.left,
-                               self.bottom-self.top]
-
         self.getPerfectScreenshotRegion(DEBUG)
 
         input("ready")
-        
+        self.level = 2
         if self.waitForFlash(DEBUG):
             if self.getWhiteBoxes(DEBUG):
                 self.clickWhiteBoxes(DEBUG)
+                self.level += 1
+                if DEBUG: print("LEVEL",self.level)
         else: return
 
         while self.waitForFlash(DEBUG):
+            self.level += 1
+            self.takeScreenshot(DEBUG,original=True)
             self.getBoxCount(DEBUG,saveImage=True)
             self.getBoxGapSize(DEBUG)
             if self.getWhiteBoxes(DEBUG):
                 self.clickWhiteBoxes(DEBUG)
+            else: break
+
+            if DEBUG: print("LEVEL",self.level)
             
 
         
 
 
     def getColours(self,DEBUG=False):
+        if DEBUG: print("getColours()")
         ss = pyautogui.screenshot()
         
         input('''
@@ -108,6 +120,7 @@ boxColour = {}
 
     # Get area of squares in terms of screen coords
     def getBoxArea(self, DEBUG=False):
+        if DEBUG: print("getBoxArea()")
         input('''
 Position the cursor:
 1. ABOVE the top left box
@@ -129,13 +142,13 @@ Then press enter in this window.
         bottomRight = pyautogui.position()
 
         if DEBUG: print('''
-getBoxArea()
-topLeft = {}
-bottomRight = {}
-'''.format(topLeft,bottomRight))
+topLeft = ({}, {})
+bottomRight = ({}, {})
+'''.format(topLeft[0],topLeft[1],
+           bottomRight[0],bottomRight[1]))
 
-        self.top = topLeft[1]
         self.left = topLeft[0]
+        self.top = topLeft[1]
         self.bottom = bottomRight[1]
         self.right = bottomRight[0]
 
@@ -145,9 +158,10 @@ bottomRight = {}
 
 
     def resetScreenshotRegion(self,DEBUG=False):
-        self.top = self.originalRegion[0]
-        self.left = self.originalRegion[1]
-        
+        # Not using
+        if DEBUG: print("resetScreenshotRegion()")
+        self.left = self.originalRegion[0]
+        self.top = self.originalRegion[1]
         
         self.width = self.originalRegion[2]
         self.height = self.originalRegion[3]
@@ -156,42 +170,74 @@ bottomRight = {}
         self.bottom = self.top + self.width
 
         if DEBUG: print('''
-resetScreenshotRegion()
-self.top = {}
-self.left = {}
-self.bottom = {}
-self.right = {}
+left = {}
+top = {}
+bottom = {}
+right = {}
 width = {}
 height = {}
-'''.format(self.top,
-           self.left,
+'''.format(self.left,
+           self.top,
            self.bottom,
            self.right,
            self.width,
            self.height))
 
 
-    def takeScreenshot(self, DEBUG=False):
-        if DEBUG: print("takeScreenshot()")
-        self.ss = pyautogui.screenshot(region=(self.left,self.top,
-                                          self.width, self.height))
-
+    def takeScreenshot(self, DEBUG=False,original=False):
+        DEBUG = False
+        if original:
+            if DEBUG: print('''
+takeScreenshot() {}
+left = {}
+top = {}
+width = {}
+height = {}
+'''.format("ORIGINAL",
+           self.originalRegion[0],
+           self.originalRegion[1],
+           self.originalRegion[2],
+           self.originalRegion[3]))
+            
+            self.ss = pyautogui.screenshot(region=(self.originalRegion[0],
+                                                   self.originalRegion[1],
+                                                   self.originalRegion[2],
+                                                   self.originalRegion[3]))
+            
+        else:
+            if DEBUG: print('''
+takeScreenshot()
+left = {}
+top = {}
+width = {}
+height = {}
+'''.format(self.left,
+           self.top,
+           self.width,
+           self.height))
+            
+            self.ss = pyautogui.screenshot(region=(self.left,self.top,
+                                                   self.width, self.height))
+        
+            
+            
 
 
 
 
     def getBoxCount(self,DEBUG=False,saveImage=False):
+        if DEBUG: print("getBoxCount()")
         
         boxCount = 0
         # inBox is used to count the boxes
         inBox = False
         
         # For loop goes from left to right, top to bottom
-        for x in range(self.width):
-            for y in range(self.height):
+        for x in range(self.originalRegion[2]):
+            for y in range(self.originalRegion[3]):
                 px = self.ss.getpixel((x,y))
 
-                if not inBox and px != self.bgColour:
+                if not inBox and px == self.boxColour:
                     # Box found
                     inBox = True
                     boxCount += 1
@@ -212,18 +258,18 @@ height = {}
                 break
 
         if DEBUG: print('''
-getBoxCount()
 boxCount = {}
 '''.format(boxCount))
+        if DEBUG: print("save boxCount_screenshot.png")
         if saveImage: self.ss.save("boxCount_screenshot.png")
 
 
         if boxCount > 8:
             if self.boxCount < boxCount:
                 # bigger area - need to recalculate perfect screenshot region
-                if DEBUG: print("Increased size {} -> {}".format(self.boxCount,
+                if DEBUG: print("Increased grid size {} -> {}".format(self.boxCount,
                                                                  boxCount))
-                self.resetScreenshotRegion(DEBUG)
+                self.takeScreenshot(DEBUG,original=True)
                 self.getPerfectScreenshotRegion(DEBUG)
             self.boxCount = boxCount
 
@@ -232,7 +278,7 @@ boxCount = {}
 
 
     def getBoxGapSize(self,DEBUG=False):
-
+        if DEBUG: print("getBoxGapSize()")
         lockY,startX,endX = 0,0,0
         boxSize,gapSize = 0,0
         for x in range(self.width):
@@ -266,7 +312,6 @@ boxCount = {}
 
 
         if DEBUG: print('''
-getBoxGapSize()
 boxSize = {}
 gapSize = {}
 '''.format(boxSize,gapSize))
@@ -280,79 +325,85 @@ gapSize = {}
 
 
     def getPerfectScreenshotRegion(self,DEBUG=False):
-        self.takeScreenshot(DEBUG)
-        
         if DEBUG: print("getPerfectScreenshotRegion()")
-
-        newX,newY = 0,0
-        for x in range(self.width):
-            for y in range(self.height):
+        self.takeScreenshot(DEBUG,original=True)
+        
+        startX,endX,startY,endY = 0,0,0,0
+        # This loop gets first X coord there is a box coloured pixel
+        for x in range(self.originalRegion[2]):
+            for y in range(self.originalRegion[3]):
                 
                 try:
                     px = self.ss.getpixel((x,y))
 
-                    if px != self.bgColour:
-                        newX = x
-                        break
+                    if px == self.boxColour:
+                        if startX == 0: startX = x
+                        else: endX = x
+                        
                 except IndexError:
                     print('''
 IndexError at
 x = {}
 y = {}
 '''.format(x,y))
-            if newX != 0: break
-            
-        
-        for y in range(self.height):
-            for x in range(self.width):
+                    
+        # This loop gets first Y coord there is a box coloured pixel
+        for y in range(self.originalRegion[3]):
+            for x in range(self.originalRegion[2]):
                 try:
                     px = self.ss.getpixel((x,y))
 
-                    if px != self.bgColour:
-                        newY = y
-                        break
+                    if px == self.boxColour:
+                        if startY == 0: startY = y
+                        else: endY = y
                 except IndexError:
                     print('''
 IndexError at
 y = {}
 x = {}
 '''.format(y,x))
-            if newY != 0: break
+                    
+        if DEBUG:
+            print('''
+startX: {}
+endX: {}
+startY: {}
+endY: {}
+'''.format(startX,endX,startY,endY))
+            self.ss.putpixel((startX, startY), (0, 255, 0))
+            self.ss.putpixel((endX, endY), (255, 0, 0))
+            print("save perfect_screenshot_region.png")
+            self.ss.save("perfect_screenshot_region.png")
 
-        self.left += newX
         
-        self.top += newY
+        
+        self.left = self.originalRegion[0] + startX
+        self.top = self.originalRegion[1] + startY
+        self.width = endX - startX
+        self.height = endY - startY
 
-        # for a 3x3 grid:
-        # (9**0.5 = 3*boxSize) +
-        # (9**0.5 = 3-1 = 2*gapSize)
-        length = int((self.boxCount**0.5)*self.boxSize)
-        length += int((self.boxCount**0.5-1)*self.gapSize)
+        self.right = self.left + self.width
+        self.bottom = self.top + self.height
 
-        self.right = self.left + length
-        self.bottom = self.top + length
+        self.gridStartX = startX
+        self.gridStartY = startY
 
-        self.width = self.right - self.left
-        self.height = self.bottom - self.top
-
-        if DEBUG: print('''
-width = {}
-height = {}
-'''.format(self.width,self.height))
+        self.gridEndX = endX
+        self.gridEndY = endY
+        
 
         self.takeScreenshot(DEBUG)
-        self.ss.save("perfect_screenshot_region.png")
+        if DEBUG: print("save perfect_screenshot_region_crop.png")
+        self.ss.save("perfect_screenshot_region_crop.png")
                 
         
 
 
             
     def waitForFlash(self, DEBUG=False):
-        # After start is clicked this method will wait for the level start 'flash'
-
-##        if DEBUG: pyautogui.moveTo(self.left,self.top-5)
-
         if DEBUG: print("waitForFlash()")
+        # After start is clicked this method will wait for the level start 'flash'
+        
 
         rgbPercent = 0 # 765 = 255,255,255 (100%)
         
@@ -380,75 +431,110 @@ height = {}
             if flash and currentPercent == rgbPercent:
                 # finished flash
                 break
+##            if DEBUG: print("sleep 0.05")
             time.sleep(0.05)
             
         if flash:
+            if DEBUG: print("sleep 1.5")
             time.sleep(1.5)
-            if DEBUG: print("WAIT FOR FLASH NOW**************************************")
-            self.takeScreenshot(DEBUG)
+            self.takeScreenshot(DEBUG,original=True)
 
-            if DEBUG: self.ss.save("white_screenshot.png")
-            
-            self.whiteScreenshot = self.ss
+            if DEBUG:
+                print("save white_screenshot.png")
+                self.ss.save("white_screenshot.png")
+                self.whiteScreenshot = self.ss
+                
+            if DEBUG: print("sleep 1.5")
+            time.sleep(1.5)
             return True
         else:
             print("waitForFlash not found")
             return False
-
-
-
-
         
-    def getBoxGridStartStep(self,DEBUG):
-
-        self.gridStart = int(self.boxSize/2)
-
-        self.gridStep = int(self.boxSize + self.gapSize)
-
-        
-
-        if DEBUG: print('''
-getBoxGridStartStep()
-gridStart = {}
-gridStep = {}
-'''.format(self.gridStart,self.gridStep))
 
 
     
 
     def getWhiteBoxes(self,DEBUG=False):
+        if DEBUG: print("getWhiteBoxes()")
+
+        self.ss = self.whiteScreenshot
         
-        time.sleep(2)
         
         # Start and step values to get x,y coords of the center of the boxes
-        self.getBoxGridStartStep(DEBUG)
 
-        if DEBUG: print("getBoxGridStartStep()")
+##        startX = int(self.left + (self.boxSize/2))
+##        endX = int(self.right)
+##
+##        startY = int(self.top + (self.boxSize/2))
+##        endY = int(self.bottom)
+        
+        self.gridStep = int(self.boxSize + self.gapSize)
 
         whiteList = []
-        for x in range(self.gridStart,self.width,self.gridStep):
-            for y in range(self.gridStart,self.height,self.gridStep):
+        for x in range(int(self.gridStartX+self.boxSize/2),self.gridEndX,self.gridStep):
+            for y in range(int(self.gridStartY+self.boxSize/2),self.gridEndY,self.gridStep):
+##                if DEBUG: print("Pixel",x,y)
                 px = self.ss.getpixel((x,y))
+                
 
-                gridX = int((x-self.gridStart)/self.gridStep)
-                gridY = int((y-self.gridStart)/self.gridStep)
+                gridX = int((x-self.gridStartX)/self.gridStep)
+                gridY = int((y-self.gridStartY)/self.gridStep)
+                if px == self.bgColour and DEBUG:
+                    print('''
+gridX = {}
+gridY = {}
+RGB = {} Background Colour
+'''.format(gridX,
+             gridY,
+             px))
+                          
                 
 ##                if DEBUG: print('''
-##x = {}
-##y = {}
+##gridX = {}
+##gridY = {}
 ##RGB = {} {}
 ##'''.format(gridX,
 ##           gridY,
-##           px,"WHITE" if px == (255,255,255) else ""))
+##           px,"WHITE" if px == (255,255,255) else
+##           "Background Colour***********************" if px == self.bgColour else
+##           "Box Colour" if px == self.boxColour else ""))
                 
                 if px == (255,255,255):
                     whiteList.append((gridX,gridY))
+                    if DEBUG: self.ss.putpixel((x, y), (0, 255, 0))
+                else:
+                    if DEBUG: self.ss.putpixel((x, y), (255, 0, 0))
                 
 
-        if DEBUG: print('''
-whiteList= {}
+        if DEBUG:
+
+            grid = []
+            for z in range(int(self.boxCount**0.5)):
+                grid.append('__')
+            grid.append('\n')
+            for i in range(int(self.boxCount**0.5)):
+                
+                for j in range(int(self.boxCount**0.5)):
+                    if (j,i) in whiteList:
+                        grid.append('|*')
+                    else:
+                        grid.append('| ')
+                grid.append('|\n')
+                
+            for z in range(int(self.boxCount**0.5)):
+                grid.append('‾‾')
+                
+
+            prettyGrid = ''.join(grid)
+            
+            print('''
+prettyGrid:
+{}
 {} Boxes found
-'''.format(whiteList,len(whiteList)))
+'''.format(prettyGrid,len(whiteList)))
+            if DEBUG: print("save getWhiteBoxes.png")
+            self.ss.save("getWhiteBoxes.png")
         if len(whiteList) < 1:
             return False
         
@@ -460,8 +546,8 @@ whiteList= {}
     
         
     def clickWhiteBoxes(self,DEBUG=False):
-##        time.sleep(2)
-        self.getBoxGridStartStep(DEBUG)
+        
+        if DEBUG: print("clickWhiteBoxes()")
         
         for (gridX,gridY) in self.whiteList:
             x = int(self.left + (gridX * self.gridStep) + (self.boxSize/2))
@@ -476,126 +562,21 @@ whiteList= {}
 Presets
 bgColour = (43, 135, 209)
 boxColour = (37, 115, 193)
-topLeft = (1060, 260)
-bottomRight = (1480, 680)
+topLeft = (1050, 254)
+bottomRight = (1814, 706)
 '''
 
 if __name__ == "__main__":
     if False:
         bgColour = (43, 135, 209)
         boxColour = (37, 115, 193)
-        topLeft = (1060, 260)
-        bottomRight = (1480, 680)
+        topLeft = (1050, 254)
+        bottomRight = (1814, 706)
         bot = MemoryBot(bgColour,boxColour,
                         topLeft,bottomRight,
                         DEBUG=True)
 
-    if True:
+    else:
         bot = MemoryBot(DEBUG=True)
     
                            
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-# Get the number of boxes
-    def getBoxValues(self, DEBUG=False):
-        if DEBUG: print("BOX VALUES NOW*****************************************")
-        ss = pyautogui.screenshot(region=(self.left,self.top,
-                                          self.width, self.height))
-
-        # topLeftCorner will be used to create the perfect screenshot region
-        topLeftCorner = (0,0)
-        # topY will keep y value of the start of the top box
-        # bottomy will keep y value of the end of the bottom box
-        topY,bottomY = 0,0
-        # boxHeight will hold the start and end y coordinate of the first box
-        boxHeight = [0,0]
-        
-        boxCount = 0
-        # inBox is used to count the boxes
-        inBox = False
-        
-        # For loop goes from left to right, top to bottom
-        for x in range(self.width):
-            for y in range(self.height):
-                px = ss.getpixel((x,y))
-
-                if not inBox and px != self.bgColour:
-                    # Box found
-                    inBox = True
-                    boxCount += 1
-
-                    # DEBUG highlight
-                    if DEBUG: ss.putpixel((x, y), (0, 255, 0))
-
-                    # Only run the first time
-                    if boxHeight[0] == 0:
-                        print("change box height",x,y)
-                        topLeftCorner = (x,y)
-                        boxHeight[0] = y
-
-                    # Only run the first time
-                    if topY == 0: topY = y
-                    
-
-                elif inBox and px == self.bgColour:
-                    # Box ended
-                    inBox = False
-
-                    # DEBUG highlight
-                    if DEBUG: ss.putpixel((x, y), (255, 0, 0))
-
-                    # Only run the first time
-                    if boxHeight[1] == 0:
-                        print("change box 2height",x,y)
-                        boxHeight[1] = y
-
-                    # Will remember the last box's bottom y coordinate
-                    bottomY = y
-                    
-                    
-                    
-            
-            if boxCount > 0: break
-            
-        # DEBUG image
-        if DEBUG: ss.save("modified_screenshot.png")
-        
-        self.boxCount = boxCount
-        self.boxSize = int(boxHeight[1] - boxHeight[0])
-        
-        self.gapSize = ((bottomY-topY)-self.boxSize*self.boxCount)/self.boxCount
-        
-        self.top += topLeftCorner[1]
-        self.left += topLeftCorner[0]
-        self.right = int(self.left + self.boxSize*self.boxCount + self.gapSize*(self.boxCount))
-        self.bottom = int(self.top + self.boxSize*self.boxCount + self.gapSize*(self.boxCount))
-
-        self.width = self.right - self.left
-        self.height = self.bottom - self.top
-
-        
-        self.boxCount **= 2
-        # DEBUG output 9 [12, 120] 108 16.0 12 10 366.0 368.0 356.0 356.0
-        if DEBUG:
-            print(self.boxCount,boxHeight,self.boxSize,self.gapSize,
-                        self.top,self.left,self.right,self.bottom,self.width,self.height)
-            ss = pyautogui.screenshot(region=(self.left,self.top,
-                                              self.width, self.height))
-            ss.save("perfect_screenshot_region.png")
-'''
-
