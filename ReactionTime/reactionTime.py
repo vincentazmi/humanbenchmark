@@ -35,12 +35,12 @@ blueBG = {}
             runFive = input("Run five times? (y/n)")
             if runFive.lower() == "y":
                 for i in range(5):
-                    self.start(firstRun=False,DEBUG=DEBUG)
+                    self.fastRun()
             else:
-                self.start(firstRun=False,DEBUG=DEBUG)
+                self.fastRun()
                 
         else:
-            self.start(firstRun=True,DEBUG=DEBUG)
+            self.firstRun(DEBUG=DEBUG)
             
 
 
@@ -63,61 +63,60 @@ Then press enter in this window.
 
         
 
-    def start(self,firstRun=False,DEBUG=False):
-        if DEBUG: print("getClickPoint()")
-        safety = 10000
+    def fastRun(self):
         redStart = time.time()
         pyautogui.click(self.x,self.y)
-        if firstRun:
-            # If after starting self.x,self.y points to white text, move down
-            while pyautogui.pixel(self.x,self.y) == (255,255,255):
-                self.y += 1
-
-            self.redBG = pyautogui.pixel(self.x,self.y)
         
-        while safety and pyautogui.pixel(self.x,self.y) == self.redBG:
-            safety -= 1
-        
-        redEnd = time.time()
+        while pyautogui.pixel(self.x,self.y) == self.redBG: pass
+    
         pyautogui.click(self.x,self.y)
+        redEnd = time.time()
 
-        if DEBUG: print('''
-safety = {}
-Wait time = {}
-redBG = {}
-'''.format(self.x,self.y,self.redBG))
 
-        if firstRun:
-            print('''
+    def firstRun(self,DEBUG=False):
+        if DEBUG: print("firstRun()")
+        pyautogui.click(self.x,self.y)
+        # If after starting self.x,self.y points to white text, move down
+        while pyautogui.pixel(self.x,self.y) == (255,255,255):
+            self.y += 1
+
+        self.redBG = pyautogui.pixel(self.x,self.y)
+        
+        print('''
 Presets to run at full speed:
 x = {}
 y = {}
 redBG = {}
+Copy the line below
+{}#{}#{}
 '''.format(self.x,
+           self.y,
+           self.redBG,
+           self.x,
            self.y,
            self.redBG))
         
 
 
+'''
+1101#327#206, 38, 54
+'''
 
-'''
-PRESETS
-x = 1495
-y = 347
-redBG = (206, 38, 54)
-'''
     
 if __name__ == "__main__":
-    x = 1495
-    y = 347
-    redBG = (206, 38, 54)
+    DEBUG = False
     
-    if False:
-        
-        bot = RectionBot([x,y],redBG,DEBUG=True)
+    if input("Do you have presets?(y/n)").lower() == 'y':
+##        redBG = (0,0,0)
+        x,y,redNew = input("Paste here:\n").split('#')
 
-    else:
+        redBG = eval(redNew)
+        
         # full speed
-        bot = RectionBot([x,y],redBG,DEBUG=False)
+        bot = RectionBot([int(x),int(y)],redBG,DEBUG=DEBUG)
+    else:
+        bot = RectionBot(DEBUG=DEBUG)
+        
+        
     
                            
