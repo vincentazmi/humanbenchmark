@@ -1,4 +1,0 @@
-Things needed to start:
-Location of number
-Location of submit button
-Location of next button

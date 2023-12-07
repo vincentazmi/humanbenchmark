@@ -3,185 +3,153 @@ import pyautogui, time, pytesseract
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-class VerbalBot():
+class NumberMemory():
 
     
     def __init__(self,
-                 preset=None,
                  DEBUG=False):
+        self.DEBUG = DEBUG
+        if self.DEBUG: print("__init__()")
 
-        if preset == None:
-            self.getPresets(DEBUG)
+        self.getPresets()
 
-        else:
-            self.seenX, self.seenY = preset[0]
-            self.newX, self.newY = preset[1]
-            self.topLeft = preset[2]
-            self.bottomRight = preset[3]
-
-            self.width = self.bottomRight[0]-self.topLeft[0]
-            self.height = self.bottomRight[1]-self.topLeft[1]
-
-        try:
-            desiredScore = int(input('''
-WARNING: this program never loses
-This is an issue for you as you will lose control of your computer
-
-70 (20 Seconds)
-100 (28 Seconds)
-210 (1 Minute)
-1050 (5 Minutes)
-2100 (10 Minutes)
-9999 (47:39 Minutes)
-Please enter the desired score:
-'''))
-        except:
-            print("Undesired input received")
-            return
-
-        currentScore = 0
-        self.wordsList = []
-        startTime = time.time()
-        while currentScore < desiredScore:
-            self.readWord(DEBUG)
-            self.clickButton(DEBUG)
-            currentScore += 1
-        endTime = time.time()
-        totalTime = endTime-startTime
-        averageTime = totalTime / currentScore
-        print('''
-start = {}
-end = {}
-total = {}
-average = {}
-'''.format(startTime,endTime,
-           totalTime, averageTime))
-        print("Score:",currentScore)
+        self.start()
 
 
 
+    def getPresets(self):
+        if self.DEBUG: print("getPresets()")
 
+        input('''
+Position the cursor:
+1. Over the "Start" button
 
-    def getPresets(self,DEBUG):
-        if DEBUG: print("getPresets()")
-        ss = pyautogui.screenshot()
+And press enter in this window.
+''')
+        # Start button is in the same position as the next button later
+        self.nextX, self.nextY = pyautogui.position()
+
+        pyautogui.click(self.nextX,self.nextY)
+
+        self.blueBG = pyautogui.pixel(self.nextX,self.nextY)
+
+        for y in range(self.nextY,0,-1):
+            # Go up from start button until background is not blue
+            if pyautogui.pixel(self.nextX,y) != self.blueBG:
+                # Keep going past the "load" bar until it is blue again
+                for z in range(y,0,-1):
+                    if pyautogui.pixel(self.nextX,z) == self.blueBG:
+                        bottomY = z
+                        break
+                break
+            
+        arbitraryDistance = self.nextY - bottomY
         
-        input('''
-Position the cursor:
-1. In the center of the "SEEN" button
+        self.left = self.nextX - arbitraryDistance*3
+        self.right = self.nextX + arbitraryDistance*3
 
-And press enter in this window.
-''')
-        self.seenX, self.seenY = pyautogui.position()
+        self.top = int(bottomY - arbitraryDistance*1.25)
+        self.bottom = bottomY
 
-        input('''
-Position the cursor:
-1. In the center of the "NEW" button
+        self.width = self.right - self.left
+        self.height = self.bottom - self.top
 
-And press enter in this window.
-''')
-        self.newX, self.newY = pyautogui.position()
-
-        input('''
-Position the cursor:
-1. In the center of the middle word
-
-And press enter in this window.
-''')
-        middleX, middleY = pyautogui.position()
-
-        self.topLeft = (int(middleX-((middleX-self.seenX)*4)),
-                        int(middleY-((self.seenY-middleY)/2)))
-
-        self.bottomRight = (int(middleX+((middleX-self.seenX)*4)),
-                            int(middleY+((self.seenY-middleY)/2)))
-
-        
-
-        if DEBUG:
+        if self.DEBUG:
             print('''
-seenXY = ({},{})
-newXY = ({},{})
-topLeft = {}
-bottomRight = {}
-'''.format(self.seenX, self.seenY,
-           self.newX, self.newY,
-           self.topLeft,
-           self.bottomRight))
-                  
-            ss.putpixel(self.topLeft,(255,0,0))
-            ss.putpixel(self.bottomRight,(255,0,0))
-            ss.save("screenshot_region.png")
+left = {}
+top = {}
+width = {}
+height = {}
+'''.format(self.left,
+           self.top,
+           self.width,
+           self.height))
 
-            self.width = self.bottomRight[0]-self.topLeft[0]
-            self.height = self.bottomRight[1]-self.topLeft[1]
+        self.takeScreenshot()
+        self.getNumber()
+        count = 10000
+        try:
+            while count and pyautogui.locateOnScreen('screenshot_number.png', region=(self.left,
+                                                                                      self.top,
+                                                                                      self.width,
+                                                                                      self.height)):
+                count -= 1
+            if count == 0: print("count dead")
+            
+        except:
+            pyautogui.write(str(self.currentNumber))
+        
+        input('''
+Position the cursor:
+1. Over the "Submit" button
 
-            ss = pyautogui.screenshot(region=(self.topLeft[0],
-                                              self.topLeft[1],
+And press enter in this window.
+'''.format(self.currentNumber))
+        
+        self.submitX, self.submitY = pyautogui.position()
+
+        pyautogui.click(self.submitX,self.submitY)
+
+    def takeScreenshot(self):
+        self.ss = pyautogui.screenshot(region=(self.left,
+                                              self.top,
                                               self.width,
                                               self.height))
-            
-            ss.save("cropped_screenshot_region.png")
-            
+        if self.DEBUG: self.ss.save("screenshot_number.png")
 
-
-
-
-
-    def readWord(self,DEBUG=False):
-        ss = pyautogui.screenshot(region=(self.topLeft[0],
-                                          self.topLeft[1],
-                                          self.width,
-                                          self.height))
-
-        self.currentWord = pytesseract.image_to_string(ss)
-##        print("word=",self.currentWord)
-
-
-    def clickButton(self,DEBUG=False):
+    def getNumber(self):
+        if self.DEBUG: print("getNumber()")
+        self.currentNumber = pytesseract.image_to_string(self.ss, config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789')
+        try:
+            self.currentNumber = int(self.currentNumber.strip())
+        except ValueError as e:
+            print("cannot get number",self.currentNumber)
+            raise e
         
-        if self.currentWord in self.wordsList:
-            if DEBUG: print("Seen",self.currentWord)
-            self.seenStreak += 1
-            
-            pyautogui.click(self.seenX, self.seenY)
-            
-
-        else:
-            if DEBUG: print("New",self.currentWord)
-            self.seenStreak = 0
-            
-            self.wordsList.append(self.currentWord)
-            pyautogui.click(self.newX, self.newY)
-        
+        if self.DEBUG: print("Found",self.currentNumber)
         
 
+    def start(self):
+        if DEBUG: print("start()")
 
-    
+        input("Ready when you are (press enter)")
 
-'''
-PRESETS
-seenXY = (1203,511)
-newXY = (1339,510)
-topLeft = (1071, 379)
-bottomRight = (1467, 467)
-'''
+
+        for i in range(10):
+            pyautogui.click(self.nextX,self.nextY)
+
+            time.sleep(0.1)
+            self.takeScreenshot()
+            self.getNumber()
+
+            count = 10000
+            try:
+                while count and pyautogui.locateOnScreen('screenshot_number.png', region=(self.left,
+                                                                                          self.top,
+                                                                                          self.width,
+                                                                                          self.height)):
+                    count -= 1
+                if count == 0: print("count dead")
+                
+            except:
+                pyautogui.write(str(self.currentNumber))
+                pyautogui.click(self.submitX,self.submitY)
+                time.sleep(0.6)
+        
+
+
+
+
+        
     
 if __name__ == "__main__":
-    seenXY = (1203,511)
-    newXY = (1339,510)
-    topLeft = (1071, 379)
-    bottomRight = (1467, 467)
-    presets = [seenXY,
-               newXY,
-               topLeft,
-               bottomRight]
+    DEBUG = True
     
-    if True: # with presets
+    if False: # with presets
         
-        bot = VerbalBot(presets,DEBUG=False)
+        bot = NumberMemory(presets,DEBUG=DEBUG)
 
     else: # without presets
-        bot = VerbalBot(DEBUG=True)
+        bot = NumberMemory(DEBUG=DEBUG)
     
                            

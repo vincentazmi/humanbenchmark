@@ -1,0 +1,9 @@
+Things needed to start:
+Location of "Start" button
+Location of middle number
+Location of "Submit" button
+
+pytesseract failing to identify 1,5,7
+1 = ""
+5 = "<)"
+7 = "1"
