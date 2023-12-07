@@ -1,4 +1,6 @@
 Things needed to start:
-Location of seen button
-Location of new button
-Location of word (top left, bottom right)
+Location of text (topLeft, bottomRight)
+
+Steps to be carried out:
+1. Convert image to text
+2. Type insanely fast
