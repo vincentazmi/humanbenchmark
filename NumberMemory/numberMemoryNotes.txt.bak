@@ -3,3 +3,9 @@ Location of "Start" button
 Location of middle number
 Location of "Submit" button
 
+pytesseract failing to identify 1,5,7
+1 = ""
+5 = "<)"
+7 = "1"
+
+Update: Going to use locateOnScreen along with screenshots of numbers 0-9 to read numbers instead of pytesseract

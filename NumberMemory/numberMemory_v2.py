@@ -29,6 +29,24 @@ And press enter in this window.
         # Start button is in the same position as the next button later
         self.nextX, self.nextY = pyautogui.position()
 
+        
+        blackOrYellow = pyautogui.pixel(self.nextX, self.nextY)
+
+        searchX = self.nextX
+        while pyautogui.pixel(searchX, self.nextY) == blackOrYellow:
+            searchX -= 1
+            
+        blackOrYellow2 = pyautogui.pixel(searchX, self.nextY)
+
+        while pyautogui.pixel(searchX, self.nextY) == blackOrYellow or \
+              pyautogui.pixel(searchX, self.nextY) == blackOrYellow2:
+            searchX -= 1
+
+        self.blueBG = pyautogui.pixel(searchX,self.nextY)
+        self.yellow = pyautogui.pixel(searchX+1,self.nextY)
+
+        ##################
+
         pyautogui.click(self.nextX,self.nextY)
 
         self.blueBG = pyautogui.pixel(self.nextX,self.nextY)

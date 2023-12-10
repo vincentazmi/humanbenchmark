@@ -7,3 +7,12 @@ pytesseract failing to identify 1,5,7
 1 = ""
 5 = "<)"
 7 = "1"
+
+Update:
+Going to use:
+Screenshots of numbers 0-9
+pyautogui.locateOnScreen()
+
+to read numbers instead of pytesseract.image_to_string()
+
+
