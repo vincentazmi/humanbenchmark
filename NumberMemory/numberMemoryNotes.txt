@@ -16,3 +16,14 @@ pyautogui.locateOnScreen()
 to read numbers instead of pytesseract.image_to_string()
 
 
+v2->3
+Mask a full screen screenshot with the blue background colour
+Find x,y,width,height of blue background
+	set as default screenshot size
+
+Read numbers by comparing to pre-defined images of numbers
+User inputs levels wanted to complete before pausing.
+User can continue with input of more levels or quit.
+If the user wishes to quit before the required levels:
+	user should be informed they have x seconds
+	after submit is pressed to alt+tab and ctrl+c

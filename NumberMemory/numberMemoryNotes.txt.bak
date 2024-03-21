@@ -8,4 +8,22 @@ pytesseract failing to identify 1,5,7
 5 = "<)"
 7 = "1"
 
-Update: Going to use locateOnScreen along with screenshots of numbers 0-9 to read numbers instead of pytesseract
+Update:
+Going to use:
+Screenshots of numbers 0-9
+pyautogui.locateOnScreen()
+
+to read numbers instead of pytesseract.image_to_string()
+
+
+v2->3
+Require full screen
+Measure screenshot height as first and last row of blue pixels
+Measure screenshot width as width of screen
+
+Read numbers by comparing to pre-defined images of numbers
+User inputs levels wanted to complete before pausing.
+User can continue with input of more levels or quit.
+If the user wishes to quit before the required levels:
+	user should be informed they have x seconds
+	after submit is pressed to alt+tab and ctrl+c

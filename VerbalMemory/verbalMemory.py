@@ -182,6 +182,6 @@ if __name__ == "__main__":
         bot = VerbalBot(presets,DEBUG=False)
 
     else: # without presets
-        bot = VerbalBot(DEBUG=True)
+        bot = VerbalBot(DEBUG=False)
     
                            
